@@ -1,0 +1,43 @@
+2N Tjuringova masina
+Qx(VU#)xS->{Qx(S\{b})x{-1,0,1}x{-1,0,1}}
+
+2D Tjuringova masina
+Qx(VU#)xS->Qx(S\{b})x{-1,0,1}x{-1,0,1}
+
+1N Tjuringova masina
+Qx(VU#)xS->{Qx(S\{b})x{-1,0,1}}
+
+1D Tjuringova masina
+Qx(VU#)xS->Qx(S\{b})x{-1,0,1}
+
+2N Magacinski automat
+Qx(VU#)xS->{QxS*x{-1,0,1}}
+
+2D Magacinski automat
+Qx(VU#)xS->QxS*x{-1,0,1}
+
+1N Magacinski automat
+Qx(VU#)xS->{QxS*}
+
+1D Magacinski automat
+Qx(VU#)xS->{QxS*}
+
+2N Konacni automat
+Qx{VU#}->{Qx{-1,0,1}}
+
+2D Konacni automat
+Qx{VU#}->Qx{-1,0,1}
+
+1N Konacni automat
+Qx{VU#}->{Q}
+
+1D Konacni automat
+Qx{VU#}->Q
+
+
+
+Kompilatorom prevodjeni jezici:
+C, C++
+
+Interpretatorom prevodjeni jezici:
+Javascript, Python
