@@ -35,8 +35,8 @@ letter = [a-zA-Z]
 digit = [0-9]
 digit_array = (0|[1-9]{digit}*)
 
-hexa_digit = [0-9a-zA-Z]
-hexa_array = (0|[1-9a-zA-Z]{hexa_digit}*)
+hexa_digit = [0-9a-fA-F]
+hexa_array = (0|[1-9a-fA-F]{hexa_digit}*)
 
 octal_digit = [0-7]
 octal_array = (0|[1-7]{octal_digit}*)

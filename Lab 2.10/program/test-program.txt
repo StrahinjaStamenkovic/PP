@@ -1,0 +1,7 @@
+while b and c or true:
+	while c:
+		c:=false;
+	else
+		c:=true;
+else 
+	c$:=1.5 ;
