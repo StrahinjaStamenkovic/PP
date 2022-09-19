@@ -1,0 +1,58 @@
+	Load_Const	R1, 5
+	Store		R1, x
+	Load_Const	R1, 7
+	Store		R1, y
+	Load_Const	R1, a
+	Store		R1, a
+	Load_Const	R1, @
+	Store		R1, a
+	Load_Mem	R1, x
+	Load_Mem	R2, y
+	Compare_Less		R1, R2
+	Store		R1, $tmp0
+	Load_Mem	R1, $tmp0
+	Store		R1, b
+	Load_Const	R1, 700716
+	Store		R1, hex
+	Load_Const	R1, 0
+	Store		R1, oct
+	Load_Const	R1, 123.0
+	Store		R1, float
+	Load_Const	R1, 123000.0
+	Store		R1, float
+	Load_Const	R1, 1.3E21
+	Store		R1, float
+	Load_Const	R1, 0.1415926535
+	Store		R1, float
+	Load_Const	R1, 0.001415926535
+	Store		R1, float
+lab0:
+	Load_Mem	R1, b
+	JumpIfNotZero	R1, lab1
+lab2:
+	Load_Mem	R1, c$
+	JumpIfNotZero	R1, lab3
+	Load_Const	R1, 2
+	Store		R1, a1
+	Jump	lab2
+lab3:
+	Load_Const	R1, 13
+	Store		R1, a3
+	Jump	lab0
+lab1:
+	Load_Const	R1, 1.5
+	Store		R1, c$
+	Load_Const	R1, true
+	Load_Const	R2, false
+	And		R1, R2
+	Store		R1, $tmp1
+	Load_Mem	R1, y
+	Load_Mem	R2, x
+	ERROR		R1, R2
+	Store		R1, $tmp2
+	Load_Mem	R1, $tmp1
+	Load_Mem	R2, $tmp2
+	Or		R1, R2
+	Store		R1, $tmp3
+	Load_Mem	R1, $tmp3
+	Store		R1, b

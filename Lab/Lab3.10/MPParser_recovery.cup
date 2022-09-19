@@ -1,0 +1,308 @@
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+
+	public int errorNumber = 0;
+
+    public static void main( String[] args )
+    {
+        try
+        {
+            FileReader file = new FileReader( args[0] );
+            Scanner scanner = new MPLexer( file );
+            MPParserRecovery parser = new MPParserRecovery( scanner );
+			parser.parse();
+			
+			if ( parser.errorNumber == 0)
+				System.out.println( "Analiza je zavrsena. U kodu nema sintaksnih gresaka!" );
+			else
+				System.out.println( "Analiza je zavrsena. Broj sintaksnih gresaka: " + parser.errorNumber );
+        }
+        catch( Exception e )
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void syntax_error(Symbol current_token)
+    {
+
+    }
+
+    public void report_error(String message, Object info)
+    {
+        System.out.println( message );
+    }
+
+    public int getLine()
+    {
+        return ( ( MPLexer ) getScanner() ).getLine();
+    }
+:};
+
+
+//Terminals
+terminal PROGRAM,DOT,BEGIN,END,/*EPSILON????,*/COLON,SEMICOLON,COMMA,ID,INTEGER,CHAR,REAL,BOOLEAN,ASSIGN,WHILE,ELSE,OR,AND,LESS,LESS_OR_EQUAL_TO,EQUAL_TO,NOT_EQUAL_TO,GREATER,GREATER_OR_EQUAL_TO,OPEN_BRACKET,CLOSED_BRACKET,CONST;
+//Non Terminals
+non terminal Program,Block,Variables,StatementList,Declaration,NameList,Type,Statement,WhileLoop,Expression,AndExpression,RelExpression,RelOp,Term;
+
+//Grammar
+precedence nonassoc error;
+
+start with Program;
+
+Program ::= PROGRAM Block DOT
+{:
+    System.out.println("Smena 1 => Program!");
+:}
+| PROGRAM Block error
+{:
+    System.out.println("Nedostaje '.' u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| PROGRAM error
+{:
+    System.out.println("Nepravilno definisan blok u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:};
+
+Block ::= BEGIN Variables StatementList END
+{:
+    System.out.println("Smena 2 => Block!");
+:}
+| BEGIN Variables StatementList error
+{:
+    System.out.println("Nedostaje 'end' u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| BEGIN error
+{:
+    System.out.println("Nepravilno definisane promenljive u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:};
+
+Variables ::= Variables Declaration
+{:
+    System.out.println("Smena 3 => Variables!");
+:}
+| Variables error
+{:
+    System.out.println("Nepravilna deklaracija u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+|
+{:
+    System.out.println("Smena 4 => Variables!");
+:};
+
+Declaration ::= NameList COLON Type SEMICOLON
+{:
+    System.out.println("Smena 5 => Declaration!");
+:}
+| NameList COLON Type error
+{:
+    System.out.println("Nedostaje ';' u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| NameList COLON error
+{:
+    System.out.println("Nepravilno definisan tip u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:};
+
+NameList ::= NameList COMMA ID:id
+{:
+    System.out.println("Smena 6 => NameList '" + id + "'!");
+:}
+| NameList COMMA error
+{:
+    System.out.println("Nedostaje identifikator u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| NameList error
+{:
+    System.out.println("Nedostaje ',' u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| ID: id
+{:
+    System.out.println("Smena 7 => NameList '" + id + "'!");
+:};
+
+Type ::= INTEGER
+{:
+    System.out.println("Smena 8 => Type integer!");
+:}
+| CHAR
+{:
+    System.out.println("Smena 9 => Type char!");
+:}
+| REAL
+{:
+    System.out.println("Smena 10 => Type real!");
+:}
+| BOOLEAN
+{:
+    System.out.println("Smena 11 => Type boolean!");
+:};
+
+StatementList ::= StatementList Statement
+{:
+    System.out.println("Smena 12 => StatementList!");
+:}
+| Statement
+{:
+    System.out.println("Smena 13 => StatementList!");
+:};
+
+Statement ::= WhileLoop
+{:
+    System.out.println("Smena 14 => Statement!");
+:}
+| ID:id ASSIGN Expression SEMICOLON
+{:
+    System.out.println("Smena 15 => Statement '" + id + "'!");
+:}
+| ID:id ASSIGN error
+{:
+    System.out.println("Nperavilno definisan izraz u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| ID:id error
+{:
+    System.out.println("Nedostaje ':=' u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| Block
+{:
+    System.out.println("Smena 16 => Statement!");
+:};
+
+WhileLoop ::= WHILE Expression COLON Statement ELSE Statement
+{:
+    System.out.println("Smena 17 => WhileLoop!");
+:}
+| WHILE Expression COLON Statement ELSE error
+{:
+    System.out.println("Nepravilno definisan statement u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| WHILE Expression COLON Statement error
+{:
+    System.out.println("Nedostaje 'else' u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| WHILE Expression COLON error
+{:
+    System.out.println("nperavilno definisan statement u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| WHILE error
+{:
+    System.out.println("Nepravilno definisan izraz u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:};
+
+Expression ::= Expression OR AndExpression
+{:
+    System.out.println("Smena 18 => Expression!");
+:}
+| Expression OR error
+{:
+    System.out.println("Nepravilno definsan and izraz u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| Expression error
+{:
+    System.out.println("Nedostaje 'OR' operator u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| AndExpression
+{:
+    System.out.println("Smena 19 => Expression!");
+:};
+
+AndExpression ::= AndExpression AND RelExpression
+{:
+    System.out.println("Smena 20 => AndExpression!");
+:}
+| AndExpression AND error
+{:
+    System.out.println("Nepravilno definisan realcioni izraz u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| AndExpression error
+{:
+    System.out.println("Nedostaje 'AND' operator u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| RelExpression
+{:
+    System.out.println("Smena 21 => AndExpression!");
+:};
+
+RelExpression ::= Term RelOp Term
+{:
+    System.out.println("Smena 22 => RelExpression!");
+:}
+| Term RelOp error
+{:
+    System.out.println("Nepravilno definisan term u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}
+| Term
+{:
+    System.out.println("Smena 23 => RelExpression!");
+:};
+
+RelOp ::= LESS
+{:
+    System.out.println("Smena 24 => RelOp lower!");
+:}
+| LESS_OR_EQUAL_TO
+{:
+    System.out.println("Smena 25 => RelOp lower or equal!");
+:}
+| EQUAL_TO
+{:
+    System.out.println("Smena 26 => RelOp equal!");
+:}
+| NOT_EQUAL_TO
+{:
+    System.out.println("Smena 27 => RelOp not equal!");
+:}
+| GREATER
+{:
+    System.out.println("Smena 28 => RelOp greater!");
+:}
+| GREATER_OR_EQUAL_TO
+{:
+    System.out.println("Smena 29 => RelOp greater or equal!");
+:};
+
+Term ::= ID:id
+{:
+    System.out.println("Smena 30 => Term ID '" + id + "'!");
+:}
+| CONST:c
+{:
+    System.out.println("Smena 31 => Term CONST '" + c + "'!");
+:}
+| OPEN_BRACKET Expression CLOSED_BRACKET
+{:
+	System.out.println("Smena 32 => Term (Expression)");
+:}
+/*| OPEN_BRACKET Expression error
+{:
+	System.out.println("Nije zatvorena zagrada u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:}*/
+| OPEN_BRACKET error
+{:
+	System.out.println("Nepravilno definisan Term u liniji " + parser.getLine() + "!");
+	parser.errorNumber++;
+:};
+
+
+

@@ -1,0 +1,267 @@
+import java_cup.runtime.*;
+import java.io.*;
+import SymbolTable.*;
+import java.util.ArrayList;
+import AST.*;
+parser code {:
+
+	public int errNo = 0;
+   	public int warnNo = 0;
+	
+ 	SymbolTable symbolTable;
+    public static void main( String[] args )
+    {
+        try
+        {
+            FileReader file = new FileReader( args[0] );
+            Scanner scanner = new MPLexer( file );
+            MPParserSemantics parser = new MPParserSemantics( scanner );
+			parser.parse();
+			parser.checkWarnings();
+			if (  parser.errNo == 0 && parser.warnNo == 0 )
+				System.out.println( "Analiza je zavrsena. U kodu nema gresaka!" );
+			else
+				 System.out.println( "Analiza zavrsena. Broj gresaka: " + parser.errNo 
+		         + " Broj upozorenja: " + parser.warnNo );
+        }
+        catch( Exception e )
+        {
+            e.printStackTrace();
+        }
+    }
+   	public void checkWarnings()
+   	{
+      	SymbolNode current = symbolTable.getVariables();
+      	while ( current != null )
+      	{
+      		Variable var = ( Variable ) current;
+      		if ( var.last_def != -1 && var.last_use == -1 )
+      		{
+      			System.out.println( "Upozorenje: Promenljiva " + var.name + 
+      				" je deklarisana, ali se nigde ne koristi." );
+      			warnNo++;
+      		}
+      		else if ( var.last_def > var.last_use )
+      		{
+      			System.out.println( "Upozorenje: Vrednost dodeljena promeljivoj " +
+      			    var.name + " u liniji " + var.last_def + " se nigde ne koristi." );
+      			warnNo++;
+      		}
+      		current = current.next;
+     	}		
+   	}
+   
+   	public void syntax_error(Symbol cur_token)
+   	{
+   		  
+  	}
+   
+   	public void report_error(String message, Object info)
+   	{
+   		System.out.print( message );
+   	}
+   
+   	public int getLine()
+   	{
+   		return (( MPLexer) getScanner()).getLine();
+   	}
+:};
+
+init with {:
+	symbolTable = new SymbolTable();
+:};
+//Terminals
+terminal PROGRAM,DOT,BEGIN,END,COLON,SEMICOLON,COMMA;
+terminal INTEGER,CHAR,REAL,BOOLEAN,ASSIGN,WHILE,ELSE;
+terminal OR,AND,OPEN_BRACKET,CLOSED_BRACKET;
+terminal Integer LESS,LESS_OR_EQUAL_TO,EQUAL_TO,NOT_EQUAL_TO,GREATER,GREATER_OR_EQUAL_TO;
+terminal String ID;
+terminal Integer INTEGERCONST;
+terminal Double REALCONST;
+terminal Boolean BOOLEANCONST;
+terminal Character CHARCONST;
+
+//Non Terminals
+non terminal Block Program,Block,StatementList;
+non terminal Variables,Declaration;
+non terminal Statement Statement;
+non terminal WhileLoop WhileLoop;
+non terminal Expression Expression, AndExpression,RelExpression,Term;
+non terminal Type Type;
+non terminal ArrayList NameList;
+non terminal Constant CONST;
+non terminal Integer RelOp;
+
+//Grammar
+//precedence nonassoc error;
+
+start with Program;
+
+Program ::= PROGRAM Block:b DOT
+{:
+	RESULT = b;
+:};
+
+Block ::= BEGIN Variables StatementList:sl END
+{:
+	RESULT = sl;
+:};
+
+Variables ::= Variables Declaration
+|
+;
+
+Declaration ::= NameList:niz COLON Type:t SEMICOLON
+{:
+    for ( int i=0; i<niz.size(); i++ )
+	{
+		String ime = (String) niz.get(i);
+					   
+		if ( ! parser.symbolTable.addVar( ime, t ) )
+		{
+			System.out.println( "Greska u liniji " + parser.getLine() + ": " + 
+        		"Promenljiva " + ime + " je vec deklarisana." );
+    		parser.errNo++;
+		}
+	}
+:};
+
+NameList ::= NameList:niz COMMA ID:id
+{:
+	RESULT = niz;
+	RESULT.add(  id );
+:}
+| ID: id
+{:
+	RESULT = new ArrayList();
+	RESULT.add( id );
+:};
+
+Type ::= INTEGER
+{:
+    RESULT = parser.symbolTable.getType( "integer" );
+:}
+| CHAR
+{:
+    RESULT = parser.symbolTable.getType( "char" );
+:}
+| REAL
+{:
+    RESULT = parser.symbolTable.getType( "real" );
+:}
+| BOOLEAN
+{:
+    RESULT = parser.symbolTable.getType( "boolean" );
+:};
+
+StatementList ::= StatementList:sl Statement:s
+{:
+	RESULT = sl;
+	RESULT.addStatement(s);
+:}
+| Statement:s
+{:
+	RESULT = new Block();
+	RESULT.addStatement(s);
+:};
+
+Statement ::= WhileLoop:wl
+{:
+	RESULT = wl;
+:}
+| ID:id ASSIGN Expression:e SEMICOLON
+{:
+	Variable var = parser.symbolTable.getVar( id );
+	RESULT = new Assignment(var,e);
+:}
+| Block:b
+{:
+	RESULT = b;
+:};
+
+WhileLoop ::= WHILE Expression:e COLON Statement:s1 ELSE Statement:s2
+{:
+	RESULT = new WhileLoop(e,s1,s2);
+:};
+
+Expression ::= Expression:e OR AndExpression:a
+{:
+	RESULT = new Or(e,a);
+:}
+| AndExpression:a
+{:
+    RESULT = a;
+:};
+
+AndExpression ::= AndExpression:a AND RelExpression:r
+{:
+	RESULT = new And(a,r);
+:}
+| RelExpression:r
+{:
+	RESULT = r;
+:};
+
+RelExpression ::= Term:t1 RelOp:rO Term:t2
+{:
+	RESULT = new RelationalExpression(t1,rO,t2);
+:}
+| Term:t
+{:
+    RESULT = t;
+:};
+
+RelOp ::= LESS:l
+{:
+	RESULT = l;
+:}
+| LESS_OR_EQUAL_TO:le
+{:
+	RESULT =  le;
+:}
+| EQUAL_TO:e
+{:
+	RESULT =  e;
+:}
+| NOT_EQUAL_TO:ne
+{:
+	RESULT =  ne;
+:}
+| GREATER:g
+{:
+	RESULT =  g;
+:}
+| GREATER_OR_EQUAL_TO:ge
+{:
+	RESULT =  ge;
+:};
+
+Term ::= ID:id
+{:
+    Variable var = parser.symbolTable.getVar( id );
+	RESULT = new VariableExpression(var);
+:}
+| CONST:c
+{:
+     RESULT = new ConstantExpression(c);
+:}
+| OPEN_BRACKET Expression:e CLOSED_BRACKET
+{:
+	 RESULT = e;
+:};
+CONST ::= INTEGERCONST:c
+{:
+	RESULT = new Constant( parser.symbolTable.getType( "integer" ), c );
+:}
+| REALCONST:c
+{:
+	RESULT = new Constant( parser.symbolTable.getType( "real" ), c );
+:}
+| BOOLEANCONST:c
+{:
+	RESULT = new Constant( parser.symbolTable.getType( "boolean" ), c );
+:}
+| CHARCONST:c
+{:
+	RESULT = new Constant( parser.symbolTable.getType( "char" ), c );
+:};
